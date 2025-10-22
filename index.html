@@ -1,146 +1,110 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.stream.Collectors;
-import java.util.HashMap;
-
-/**
- * A Java console application that calculates Pokémon type effectiveness.
- * This demonstrates how to implement the core data structure and logic using Java.
- */
-public class PokemonTypeCalculator {
-
-    // --- 1. DATA STRUCTURE: The Pokémon Type Chart (Generation 6+) ---
-    // The Map is defined statically, mapping Attacking Type -> (Defending Type -> Multiplier).
-    private static final Map<String, Map<String, Double>> TYPE_EFFECTIVENESS;
-    private static final List<String> ALL_TYPES = Arrays.asList(
-        "Normal", "Fire", "Water", "Grass", "Electric", "Ice", "Fighting", "Poison", 
-        "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Steel", 
-        "Dark", "Fairy"
-    );
-
-    // Static initializer block to set up the complex nested map data structure.
-    static {
-        TYPE_EFFECTIVENESS = new HashMap<>();
-
-        // Helper function to create a map for a single attacking type
-        Map<String, Double> createTypeMap(Object... pairs) {
-            Map<String, Double> map = new HashMap<>();
-            for (int i = 0; i < pairs.length; i += 2) {
-                map.put((String) pairs[i], (Double) pairs[i + 1]);
-            }
-            return map;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Type Effectiveness</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 20px;
         }
-
-        TYPE_EFFECTIVENESS.put("Normal", createTypeMap("Ghost", 0.0, "Rock", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Fire", createTypeMap("Grass", 2.0, "Ice", 2.0, "Bug", 2.0, "Steel", 2.0, "Fire", 0.5, "Water", 0.5, "Rock", 0.5, "Dragon", 0.5));
-        TYPE_EFFECTIVENESS.put("Water", createTypeMap("Fire", 2.0, "Ground", 2.0, "Rock", 2.0, "Water", 0.5, "Grass", 0.5, "Dragon", 0.5));
-        TYPE_EFFECTIVENESS.put("Grass", createTypeMap("Water", 2.0, "Ground", 2.0, "Rock", 2.0, "Fire", 0.5, "Grass", 0.5, "Poison", 0.5, "Flying", 0.5, "Bug", 0.5, "Dragon", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Electric", createTypeMap("Water", 2.0, "Flying", 2.0, "Ground", 0.0, "Grass", 0.5, "Electric", 0.5, "Dragon", 0.5));
-        TYPE_EFFECTIVENESS.put("Ice", createTypeMap("Grass", 2.0, "Ground", 2.0, "Flying", 2.0, "Dragon", 2.0, "Fire", 0.5, "Water", 0.5, "Ice", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Fighting", createTypeMap("Normal", 2.0, "Ice", 2.0, "Rock", 2.0, "Dark", 2.0, "Steel", 2.0, "Ghost", 0.0, "Poison", 0.5, "Flying", 0.5, "Psychic", 0.5, "Bug", 0.5, "Fairy", 0.5));
-        TYPE_EFFECTIVENESS.put("Poison", createTypeMap("Grass", 2.0, "Fairy", 2.0, "Poison", 0.5, "Ground", 0.5, "Rock", 0.5, "Ghost", 0.5, "Steel", 0.0));
-        TYPE_EFFECTIVENESS.put("Ground", createTypeMap("Fire", 2.0, "Electric", 2.0, "Poison", 2.0, "Rock", 2.0, "Steel", 2.0, "Flying", 0.0, "Grass", 0.5, "Bug", 0.5));
-        TYPE_EFFECTIVENESS.put("Flying", createTypeMap("Grass", 2.0, "Fighting", 2.0, "Bug", 2.0, "Rock", 0.5, "Steel", 0.5, "Electric", 0.5));
-        TYPE_EFFECTIVENESS.put("Psychic", createTypeMap("Fighting", 2.0, "Poison", 2.0, "Steel", 0.5, "Psychic", 0.5, "Dark", 0.0));
-        TYPE_EFFECTIVENESS.put("Bug", createTypeMap("Grass", 2.0, "Psychic", 2.0, "Dark", 2.0, "Fire", 0.5, "Fighting", 0.5, "Poison", 0.5, "Flying", 0.5, "Ghost", 0.5, "Steel", 0.5, "Fairy", 0.5));
-        TYPE_EFFECTIVENESS.put("Rock", createTypeMap("Fire", 2.0, "Ice", 2.0, "Flying", 2.0, "Bug", 2.0, "Fighting", 0.5, "Ground", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Ghost", createTypeMap("Psychic", 2.0, "Ghost", 2.0, "Normal", 0.0, "Dark", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Dragon", createTypeMap("Dragon", 2.0, "Steel", 0.5, "Fairy", 0.0));
-        TYPE_EFFECTIVENESS.put("Steel", createTypeMap("Ice", 2.0, "Rock", 2.0, "Fairy", 2.0, "Fire", 0.5, "Water", 0.5, "Electric", 0.5, "Steel", 0.5));
-        TYPE_EFFECTIVENESS.put("Dark", createTypeMap("Psychic", 2.0, "Ghost", 2.0, "Fighting", 0.5, "Dark", 0.5, "Fairy", 0.5));
-        TYPE_EFFECTIVENESS.put("Fairy", createTypeMap("Fighting", 2.0, "Dragon", 2.0, "Dark", 2.0, "Fire", 0.5, "Poison", 0.5, "Steel", 0.5));
-    }
-
-    /**
-     * Main method to run the console application.
-     */
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("--- Pokémon Type Effectiveness Calculator (Java Console) ---");
-        System.out.println("Available Types: " + ALL_TYPES.stream().collect(Collectors.joining(", ")));
-        
-        System.out.print("\nEnter the Attacking Type (e.g., Fire, Water, Ice): ");
-        String inputType = scanner.nextLine().trim();
-
-        // Capitalize the first letter for lookup uniformity
-        String attackingType = inputType.substring(0, 1).toUpperCase() + inputType.substring(1).toLowerCase();
-
-        if (!TYPE_EFFECTIVENESS.containsKey(attackingType)) {
-            System.out.println("\nError: '" + inputType + "' is not a recognized type.");
-            return;
+        h1 {
+            color: #ff4500;
         }
-
-        // --- 2. CORE LOGIC: Calculation and Categorization ---
-        calculateEffectiveness(attackingType);
-
-        scanner.close();
-    }
-
-    /**
-     * Calculates and prints the effectiveness of the given attacking type against all defending types.
-     * @param attackingType The type of the move used.
-     */
-    private static void calculateEffectiveness(String attackingType) {
-        
-        // Use a map to store the results grouped by multiplier category
-        Map<Double, List<String>> results = new HashMap<>();
-        results.put(2.0, new ArrayList<>());
-        results.put(0.5, new ArrayList<>());
-        results.put(0.0, new ArrayList<>());
-        results.put(1.0, new ArrayList<>());
-
-        Map<String, Double> attackChart = TYPE_EFFECTIVENESS.get(attackingType);
-
-        // Loop through all possible defending types
-        for (String defendingType : ALL_TYPES) {
-            // Get the multiplier, defaulting to 1.0 (Neutral) if not specified
-            Double multiplier = attackChart.getOrDefault(defendingType, 1.0);
-            
-            // Categorize the defending type
-            results.get(multiplier).add(defendingType);
+        input, select, button {
+            padding: 8px;
+            margin: 5px 0;
         }
-
-        // --- 3. DISPLAY: Print the Categorized Results ---
-        System.out.println("\n---------------------------------------------------------");
-        System.out.println("EFFECTIVENESS OF " + attackingType.toUpperCase() + " ATTACKS:");
-        System.out.println("---------------------------------------------------------");
-        
-        // 2x Multiplier
-        displayCategory("SUPER EFFECTIVE (2x)", results.get(2.0));
-        
-        // 0.5x Multiplier
-        displayCategory("NOT VERY EFFECTIVE (0.5x)", results.get(0.5));
-        
-        // 0x Multiplier
-        displayCategory("INEFFECTIVE / IMMUNE (0x)", results.get(0.0));
-        
-        // 1x Multiplier (Neutral) - less critical for a quick glance, but included for completeness
-        System.out.println("\n[Neutral (1x)]: " + formatTypeList(results.get(1.0)));
-        System.out.println("---------------------------------------------------------");
-    }
-
-    /**
-     * Helper method to display a categorized list of types.
-     * @param title The category title.
-     * @param types The list of types in that category.
-     */
-    private static void displayCategory(String title, List<String> types) {
-        String typeList = formatTypeList(types);
-        System.out.println("\n" + title + ": " + typeList);
-    }
+        .results {
+            margin-top: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .category {
+            margin-bottom: 10px;
+        }
+        .category strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pokémon Type Effectiveness Calculator</h1>
     
-    /**
-     * Formats a list of types into a comma-separated string, or returns "None" if empty.
-     */
-    private static String formatTypeList(List<String> types) {
-        if (types.isEmpty()) {
-            return "None";
+    <label for="attackType">Select Attacking Type:</label>
+    <select id="attackType"></select>
+    <button onclick="calculateEffectiveness()">Calculate</button>
+    
+    <div class="results" id="results"></div>
+
+    <script>
+        // --- 1. Data Structure ---
+        const ALL_TYPES = [
+            "Normal","Fire","Water","Grass","Electric","Ice","Fighting","Poison",
+            "Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Steel",
+            "Dark","Fairy"
+        ];
+
+        const TYPE_EFFECTIVENESS = {
+            "Normal": {"Ghost":0.0,"Rock":0.5,"Steel":0.5},
+            "Fire": {"Grass":2,"Ice":2,"Bug":2,"Steel":2,"Fire":0.5,"Water":0.5,"Rock":0.5,"Dragon":0.5},
+            "Water": {"Fire":2,"Ground":2,"Rock":2,"Water":0.5,"Grass":0.5,"Dragon":0.5},
+            "Grass": {"Water":2,"Ground":2,"Rock":2,"Fire":0.5,"Grass":0.5,"Poison":0.5,"Flying":0.5,"Bug":0.5,"Dragon":0.5,"Steel":0.5},
+            "Electric": {"Water":2,"Flying":2,"Ground":0,"Grass":0.5,"Electric":0.5,"Dragon":0.5},
+            "Ice": {"Grass":2,"Ground":2,"Flying":2,"Dragon":2,"Fire":0.5,"Water":0.5,"Ice":0.5,"Steel":0.5},
+            "Fighting": {"Normal":2,"Ice":2,"Rock":2,"Dark":2,"Steel":2,"Ghost":0,"Poison":0.5,"Flying":0.5,"Psychic":0.5,"Bug":0.5,"Fairy":0.5},
+            "Poison": {"Grass":2,"Fairy":2,"Poison":0.5,"Ground":0.5,"Rock":0.5,"Ghost":0.5,"Steel":0},
+            "Ground": {"Fire":2,"Electric":2,"Poison":2,"Rock":2,"Steel":2,"Flying":0,"Grass":0.5,"Bug":0.5},
+            "Flying": {"Grass":2,"Fighting":2,"Bug":2,"Rock":0.5,"Steel":0.5,"Electric":0.5},
+            "Psychic": {"Fighting":2,"Poison":2,"Steel":0.5,"Psychic":0.5,"Dark":0},
+            "Bug": {"Grass":2,"Psychic":2,"Dark":2,"Fire":0.5,"Fighting":0.5,"Poison":0.5,"Flying":0.5,"Ghost":0.5,"Steel":0.5,"Fairy":0.5},
+            "Rock": {"Fire":2,"Ice":2,"Flying":2,"Bug":2,"Fighting":0.5,"Ground":0.5,"Steel":0.5},
+            "Ghost": {"Psychic":2,"Ghost":2,"Normal":0,"Dark":0.5,"Steel":0.5},
+            "Dragon": {"Dragon":2,"Steel":0.5,"Fairy":0},
+            "Steel": {"Ice":2,"Rock":2,"Fairy":2,"Fire":0.5,"Water":0.5,"Electric":0.5,"Steel":0.5},
+            "Dark": {"Psychic":2,"Ghost":2,"Fighting":0.5,"Dark":0.5,"Fairy":0.5},
+            "Fairy": {"Fighting":2,"Dragon":2,"Dark":2,"Fire":0.5,"Poison":0.5,"Steel":0.5}
+        };
+
+        // --- Populate dropdown ---
+        const attackTypeSelect = document.getElementById("attackType");
+        ALL_TYPES.forEach(type => {
+            let option = document.createElement("option");
+            option.value = type;
+            option.text = type;
+            attackTypeSelect.appendChild(option);
+        });
+
+        // --- 2. Core Logic ---
+        function calculateEffectiveness() {
+            const attackingType = attackTypeSelect.value;
+            const attackChart = TYPE_EFFECTIVENESS[attackingType] || {};
+            
+            const results = {2:[], 0.5:[], 0:[], 1:[]};
+            
+            ALL_TYPES.forEach(defType => {
+                const multiplier = attackChart[defType] !== undefined ? attackChart[defType] : 1;
+                results[multiplier].push(defType);
+            });
+
+            displayResults(results, attackingType);
         }
-        // Sort the list alphabetically before joining
-        types.sort(String::compareTo);
-        return types.stream().collect(Collectors.joining(", "));
-    }
-}
+
+        // --- 3. Display ---
+        function displayResults(results, attackingType) {
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = `<h2>${attackingType} Attack Effectiveness</h2>`;
+
+            for (let key of [2, 0.5, 0]) {
+                resultsDiv.innerHTML += `<div class="category"><strong>${key === 2 ? "Super Effective (2x)" : key === 0.5 ? "Not Very Effective (0.5x)" : "Ineffective / Immune (0x)"}:</strong> ${results[key].join(", ") || "None"}</div>`;
+            }
+            resultsDiv.innerHTML += `<div class="category"><strong>Neutral (1x):</strong> ${results[1].join(", ") || "None"}</div>`;
+        }
+    </script>
+</body>
+</html>
